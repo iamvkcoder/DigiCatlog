@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  SHOP_OWNER
+}
+
+enum ShopStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model User {
+  id                  String     @id @default(uuid())
+  loginId             String     @unique
+  passwordHash        String
+  role                Role       @default(SHOP_OWNER)
+  shopId              String?
+  mustChangePassword  Boolean    @default(true)
+  isActive            Boolean    @default(true)
+  failedLoginAttempts Int        @default(0)
+  lockoutUntil        DateTime?
+  lastLoginAt         DateTime?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  shop                Shop?      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  auditLogs           AuditLog[] @relation("UserAuditLogs")
+
+  @@index([shopId])
+}
+
+model Shop {
+  id          String        @id @default(uuid())
+  name        String
+  slug        String        @unique
+  status      ShopStatus    @default(ACTIVE)
+  expiresAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  users       User[]
+  settings    ShopSettings?
+  categories  Category[]
+  items       Item[]
+  qrScans     QrScan[]
+  auditLogs   AuditLog[]
+
+  @@index([slug])
+  @@index([status])
+}
+
+model ShopSettings {
+  shopId         String    @id
+  logoUrl        String?
+  logoPublicId   String?
+  coverUrl       String?
+  coverPublicId  String?
+  brandColor     String?   @default("#8B4513")
+  templateKey    String    @default("classic-cream")
+  phone          String?
+  whatsapp       String?
+  address        String?
+  mapsUrl        String?
+  openingHours   Json?
+  socialLinks    Json?
+  currency       String    @default("USD")
+  updatedAt      DateTime  @updatedAt
+
+  shop           Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  shopId    String
+  name      String
+  sortOrder Int      @default(0)
+  isVisible Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  items     Item[]
+
+  @@index([shopId])
+  @@index([shopId, sortOrder])
+}
+
+model Item {
+  id            String   @id @default(uuid())
+  shopId        String
+  categoryId    String
+  name          String
+  description   String?
+  price         Decimal  @db.Decimal(10, 2)
+  imageUrl      String?
+  imagePublicId String?
+  isVeg         Boolean  @default(true)
+  spiceLevel    Int      @default(0)
+  tags          String[] @default([])
+  isAvailable   Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  category      Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([shopId])
+  @@index([shopId, categoryId])
+  @@index([shopId, sortOrder])
+}
+
+model QrScan {
+  id        String   @id @default(uuid())
+  shopId    String
+  scannedAt DateTime @default(now())
+  uaHash    String?
+
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId])
+  @@index([shopId, scannedAt])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String
+  shopId    String?
+  action    String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  actor     User     @relation("UserAuditLogs", fields: [actorId], references: [id], onDelete: Cascade)
+  shop      Shop?    @relation(fields: [shopId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([shopId])
+  @@index([createdAt])
+}

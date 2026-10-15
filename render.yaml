@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: digicatlog-api
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: npm install && npm run prisma:generate && npm run build --workspace=packages/shared && npm run build --workspace=apps/api
+    startCommand: npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma && npm run start --workspace=apps/api
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_ORIGIN
+        value: https://digicatlog.com
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: SUPER_ADMIN_LOGIN
+        value: superadmin
+      - key: SUPER_ADMIN_PASSWORD
+        sync: false

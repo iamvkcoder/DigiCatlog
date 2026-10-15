@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build --workspace=packages/shared && npm run build --workspace=apps/web",
+  "outputDirectory": "apps/web/dist",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://digicatlog-api.onrender.com/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
