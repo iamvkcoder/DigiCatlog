@@ -17,10 +17,47 @@ import {
 } from '@digicatlog/shared';
 import csvParser from 'csv-parser';
 import { Readable } from 'stream';
+import { env } from '../config/env.js';
 
 function getPublicMenuUrl(req: Request, slug: string): string {
-  const origin = req.headers.origin || `${req.protocol}://${req.get('host')}`;
-  return `${origin}/m/${slug}`;
+  // 1. Check referer (dashboard page makes the request from frontend origin)
+  const referer = req.headers.referer;
+  if (referer) {
+    try {
+      const url = new URL(referer);
+      if (!url.host.includes('onrender.com')) {
+        return `${url.protocol}//${url.host}/m/${slug}`;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // 2. Check X-Forwarded-Host from reverse proxies (Vercel)
+  const forwardedHost = req.headers['x-forwarded-host'] as string | undefined;
+  if (forwardedHost && !forwardedHost.includes('onrender.com')) {
+    const proto = (req.headers['x-forwarded-proto'] as string) || 'https';
+    return `${proto}://${forwardedHost}/m/${slug}`;
+  }
+
+  // 3. Check Origin header
+  if (req.headers.origin && !req.headers.origin.includes('onrender.com')) {
+    return `${req.headers.origin}/m/${slug}`;
+  }
+
+  // 4. Configured CLIENT_ORIGIN (e.g. https://digicatlog.vercel.app or https://digicatlog.com)
+  if (env.CLIENT_ORIGIN && !env.CLIENT_ORIGIN.includes('localhost') && !env.CLIENT_ORIGIN.includes('onrender.com')) {
+    return `${env.CLIENT_ORIGIN.replace(/\/+$/, '')}/m/${slug}`;
+  }
+
+  // 5. Default fallback to Vercel production frontend if on production Render
+  if (process.env.NODE_ENV === 'production') {
+    return `https://digicatlog.vercel.app/m/${slug}`;
+  }
+
+  const host = req.get('host') || 'localhost:5185';
+  const proto = req.protocol || 'http';
+  return `${proto}://${host}/m/${slug}`;
 }
 
 // -------------------------------------------------------------

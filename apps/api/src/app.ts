@@ -76,6 +76,21 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/dashboard', shopRoutes);
 app.use('/api/public', publicRoutes);
 
+// Direct Scan Redirect: if a QR code pointing directly to API domain is scanned, redirect to the frontend menu
+app.get('/m/:slug', (req, res) => {
+  const slug = req.params.slug;
+  let targetOrigin = 'https://digicatlog.vercel.app';
+
+  if (env.CLIENT_ORIGIN && !env.CLIENT_ORIGIN.includes('localhost') && !env.CLIENT_ORIGIN.includes('onrender.com')) {
+    targetOrigin = env.CLIENT_ORIGIN;
+  } else if (req.headers['x-forwarded-host']) {
+    const proto = (req.headers['x-forwarded-proto'] as string) || 'https';
+    targetOrigin = `${proto}://${req.headers['x-forwarded-host']}`;
+  }
+
+  res.redirect(301, `${targetOrigin.replace(/\/+$/, '')}/m/${slug}`);
+});
+
 // 404 Handler
 app.use((_req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });

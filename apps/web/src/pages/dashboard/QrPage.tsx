@@ -51,7 +51,10 @@ export const QrPage: React.FC = () => {
     );
   }
 
-  const menuUrl = data?.menuUrl || `${window.location.origin}/m/${data?.slug}`;
+  const frontendOrigin = window.location.origin;
+  const menuUrl = data?.slug
+    ? `${frontendOrigin}/m/${data.slug}`
+    : (data?.menuUrl || '');
 
   return (
     <div className="space-y-8">
