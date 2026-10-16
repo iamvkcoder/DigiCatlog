@@ -4,7 +4,7 @@ services:
     env: node
     plan: free
     region: oregon
-    buildCommand: npm install && npm run prisma:generate && npm run build --workspace=packages/shared && npm run build --workspace=apps/api
+    buildCommand: npm install --include=dev && npm run prisma:generate && npm run build --workspace=packages/shared && npm run build --workspace=apps/api
     startCommand: npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma && npm run start --workspace=apps/api
     healthCheckPath: /api/health
     envVars:

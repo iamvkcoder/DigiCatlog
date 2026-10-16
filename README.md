@@ -179,7 +179,7 @@ Shops can toggle between 4 distinct visual templates in real-time, coupled with 
 1. Connect your repository to [Render](https://render.com).
 2. Use the provided blueprint [`render.yaml`](./render.yaml) or create a **Web Service**:
    - **Environment:** Node
-   - **Build Command:** `npm install && npm run prisma:generate && npm run build --workspace=packages/shared && npm run build --workspace=apps/api`
+   - **Build Command:** `npm install --include=dev && npm run prisma:generate && npm run build --workspace=packages/shared && npm run build --workspace=apps/api`
    - **Start Command:** `npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma && npm run start --workspace=apps/api`
    - **Health Check Path:** `/api/health`
 3. Configure the environment variables in the Render Dashboard:
